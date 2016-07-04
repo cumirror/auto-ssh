@@ -1,0 +1,62 @@
+#!/bin/bash
+
+show_help() {
+	echo "usage: $0 [option]"
+	echo " -ssh alias"
+	echo " -excSh alias commandfile"
+	echo " -excSh all   commandfile"
+	echo ""
+}
+
+remote_ssh() {
+    eval $(awk -v remote="$1" '{if (remote == $1) {printf("remote=%s\n remoteport=%s user=%s\n remotepasswd=%s\n", $2, $3, $4, $5)}}' server)
+    echo $remote $user $remotefile $remoteport $remotepasswd
+    ./ssh.exp "$remote" "$user" "$remoteport" "$remotepasswd"
+}
+
+remote_excuteshell() {
+    # put your command in ./command/c.sh
+    time=$(date +%Y%m%d_%H%M)
+    dir="./command"
+    shell="$1-$time.sh"
+    cp "$2" "$dir/$shell" 
+
+    remote="255.255.255.255"
+    user="255.255.255.255"
+    remotefile="/tmp/$shell"
+    remoteport="255.255.255.255"
+    remotepasswd="255.255.255.255"
+
+    for i in `awk '{print $1}' server`
+    do
+        # skip comment lines
+        if [ ${i:0:1} == "#" ]; then
+            continue
+        fi
+
+        if [ "$1"x != "all"x ] && [ "$1"x != "$i"x ]; then
+            continue
+        fi
+
+        eval $(awk -v remote="$i" '{if (remote == $1) {printf("remote=%s\n remoteport=%s user=%s\n remotepasswd=%s\n", $2, $3, $4, $5)}}' server)
+        echo $remote $user $remotefile $remoteport $remotepasswd
+        ./sshcp.exp "$dir/$shell" "$user@$remote:$remotefile" "$remoteport" "$remotepasswd"
+        ./sshcommand.exp "$remote" "$user" "$remoteport" "$remotepasswd" "$remotefile"
+    done
+}
+
+if [ $# == 2 ]; then
+	if [ "$1"x == "-ssh"x ]; then
+        remote_ssh "$2"
+    else
+	    show_help
+    fi
+elif [ $# == 3 ]; then
+	if [ "$1"x == "-excSh"x ]; then
+        remote_excuteshell "$2" "$3"   
+    else
+	    show_help
+    fi
+else
+	show_help
+fi

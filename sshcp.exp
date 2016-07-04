@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+ 
+set timeout 60
+
+set localfile [lindex $argv 0]
+set remotefile [lindex $argv 1]
+set remoteport [lindex $argv 2]
+set passwd [lindex $argv 3]
+spawn scp -P $remoteport $localfile $remotefile 
+ 
+expect {
+   "*password:" {
+        send "$passwd\r"
+        exp_continue
+    }
+}
+
+#expect eof
+exit
