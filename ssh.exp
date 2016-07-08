@@ -15,7 +15,7 @@ expect {
             exp_continue
     }
 
-    "*$" {
+    "*~" {
     }
 }
 
